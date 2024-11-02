@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./styles.css" />
+    <title>SafeSurf</title>
+    <style>
+
+  
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .green-bg {
+            background-color: #e8f5e9;
+            /* Light green for trust score and security-related sections */
+            color: #388e3c;
+        }
+
+        .blue-bg {
+            background-color: #e3f2fd;
+            /* Light blue for technical details */
+            color: #1976d2;
+        }
+
+        /* Heading and Score Styles */
+        h2 {
+            margin-top: 0;
+            font-size: 1.2em;
+            color: #444;
+        }
+
+        .trust-score,
+        .score {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #388e3c;
+        }
+
+        /* Info Item Styles */
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+
+        .value {
+            text-align: right;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .desc {
+            font-size: 0.9em;
+            color: #777;
+            margin-top: 5px;
+        }
+
+        /* Footer Note */
+        .footer-note {
+            margin-top: 20px;
+            font-size: 0.85em;
+            text-align: center;
+            color: #555;
+        }
+
+        pre {
+           
+           
+            font-size: 0.85em;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="card__border"></div>
+        <div class="card_title__container">
+            <span class="card_title">SafeSurf</span>
+
+        </div>
+        <hr class="line" />
+        <input type="text" id="url" placeholder="Enter URL">
+        <button class="button">Analyze URL</button>
+        <div id="output" class="result"></div>
+
+        <script src="popup.js"></script>
+    </div>
+</body>
+
+</html>

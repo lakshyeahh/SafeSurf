@@ -1,0 +1,20 @@
+{
+    "manifest_version": 3,
+    "name": "SafeSurf",
+    "version": "1.0",
+    "description": "A phishing detection Chrome extension powered by SafeSurf.",
+    "permissions": ["activeTab", "scripting", "tabs"],
+    "host_permissions": ["http://localhost:5000/*"],
+    "action": {
+      "default_popup": "popup.html"
+     
+    },
+   
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["content.js"]
+      }
+    ]
+  }
+  
