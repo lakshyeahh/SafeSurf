@@ -1,5 +1,8 @@
 Team Members:
-
+Lakshya Verma
+Hardik Handa
+Ankur Gaipuria
+Devansh Dewan
 
 # SafeSurf
 
@@ -17,6 +20,11 @@ These are the features provided by SafeSurf to its users.
 
 ## Demo
 
+
+
+https://github.com/user-attachments/assets/220ebd24-74df-4478-a21d-d2c3d1a3076e
+
+![Screenshot 2024-11-14 003457](https://github.com/user-attachments/assets/8ea749b8-19fe-4198-8451-b820fa81b488)
 
 
 
