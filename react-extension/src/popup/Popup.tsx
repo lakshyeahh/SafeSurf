@@ -6,115 +6,67 @@ import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { AlertTriangle, ChevronDown, Globe, Settings, Shield, X, Info, CheckCircle, XCircle } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
+import axios from 'axios';
 
 interface InfoItemProps {
-    label: string
-    value: string | number
-    isGood: boolean
-    tooltip: string
-  }
-  
-  interface GeneralInfo {
-    domainAge: string;
-    globalRank: string;
-    urlRedirects: string;
-    tooLongUrl: string;
-    tooDeepUrl: string;
-  }
-  
-  interface SecurityDetails {
-    httpStatusCode: number;
-    hstsSupport: string;
-    useOfUrlShortener: string;
-  }
-  
-  interface TechnicalDetails {
-    ipOfDomain: string;
-    ipAddressPresentInUrl: string;
-  }
-  
-  interface SslStatus {
-    valid: boolean;
-    issuer: string;
-    issuedTo: string;
-    validFrom: string;
-    validTill: string;
-    daysToExpiry: number;
-    cipherSuite: string;
-    tlsVersion: string;
-    isRevoked: string;
-  }
-  
-  interface WhoisInfo {
-    registrar: string;
-    creationDate: string;
-    expirationDate: string;
-    updatedDate: string;
-    nameServers: string[];
-    status: string[];
-  }
-  
-  interface SiteData {
-    domain: string;
-    generalInfo: GeneralInfo;
-    securityDetails: SecurityDetails;
-    technicalDetails: TechnicalDetails;
-    sslStatus: SslStatus;
-    whoisInfo: WhoisInfo;
-  }
-  
-// Mock data function - replace with actual data fetching logic for the Chrome extension
-const fetchSiteData = async () => ({
-  domain: "pecfest.org",
-  generalInfo: {
-    domainAge: "1.1 year(s)",
-    globalRank: "10,00,000+",
-    urlRedirects: "No",
-    tooLongUrl: "No",
-    tooDeepUrl: "No",
-  },
-  securityDetails: {
-    httpStatusCode: 200,
-    hstsSupport: "No",
-    useOfUrlShortener: "No",
-  },
-  technicalDetails: {
-    ipOfDomain: "34.131.68.236",
-    ipAddressPresentInUrl: "No",
-  },
-  sslStatus: {
-    valid: true,
-    issuer: "Let's Encrypt",
-    issuedTo: "pecfest.org",
-    validFrom: "2024-10-15 05:09:52",
-    validTill: "2025-01-13 05:09:51",
-    daysToExpiry: 68,
-    cipherSuite: "TLS_AES_256_GCM_SHA384",
-    tlsVersion: "TLSv1.3",
-    isRevoked: "No",
-  },
-  whoisInfo: {
-    registrar: "GoDaddy.com, LLC",
-    creationDate: "Mon, 18 Sep 2023 13:48:21 GMT",
-    expirationDate: "Thu, 18 Sep 2025 13:48:21 GMT",
-    updatedDate: "Sat, 02 Nov 2024 13:49:11 GMT",
-    nameServers: [
-      "ns-cloud-b1.googledomains.com",
-      "ns-cloud-b4.googledomains.com",
-      "ns-cloud-b2.googledomains.com",
-      "ns-cloud-b3.googledomains.com",
-    ],
-    status: [
-      "clientDeleteProhibited",
-      "clientRenewProhibited",
-      "clientTransferProhibited",
-      "clientUpdateProhibited",
-    ],
-  },
-})
+  label: string
+  value: string | number
+  isGood: boolean
+  tooltip: string
+}
 
-const InfoItem: React.FC<InfoItemProps>  = ({ label, value, isGood, tooltip }) => (
+interface SiteData {
+  status: string;
+  url: string;
+  response_status: number;
+  rank: number;
+  age: string;
+  whois: WhoisInfo;
+  is_url_shortened: number;
+  hsts_support: number;
+  ip_present: number;
+  url_redirects: number;
+  too_long_url: number;
+  too_deep_url: number;
+  ip: string;
+  ssl: SslInfo;
+  trust_score: number;
+}
+
+interface WhoisInfo {
+  "Domain Name": string;
+  Registrar: string;
+  "Whois Server": string;
+  "Referral Url": string | null;
+  "Updated Date": string;
+  "Creation Date": string;
+  "Expiration Date": string;
+  "Name Servers": string;
+  Status: string;
+  Emails: string;
+  Dnssec: string;
+  Name: string;
+  Org: string;
+  Address: string;
+  City: string;
+  State: string;
+  "Registrant Postal Code": string;
+  Country: string;
+}
+
+interface SslInfo {
+  "Issued By": string;
+  "Issued To": string;
+  "Valid From": string;
+  "Valid Till": string;
+  "Days to Expiry": number;
+  Version: string;
+  "Is Certificate Revoked": boolean;
+  "Cipher Suite": string;
+}
+
+
+const InfoItem: React.FC<InfoItemProps> = ({ label, value, isGood, tooltip }) => (
   <div className="flex items-center justify-between py-1">
     <TooltipProvider>
       <Tooltip>
@@ -140,27 +92,89 @@ const InfoItem: React.FC<InfoItemProps>  = ({ label, value, isGood, tooltip }) =
 
 export default function Popup() {
   const [activeTab, setActiveTab] = useState("overview")
-  const [siteData, setSiteData] = useState<SiteData | null>(null);
+  const [siteData, setSiteData] = useState<SiteData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [urlSC, setUrlSC] = useState<string | undefined>(undefined); // State to store the input URL
+
 
   useEffect(() => {
     const loadData = async () => {
-      const data = await fetchSiteData()
-      setSiteData(data)
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab && tab.url) {
+          setUrlSC(tab.url);
+        } else {
+          console.error("Unable to retrieve the active tab's URL.");
+        }
+      } catch (error) {
+        console.error("Error retrieving tab URL:", error);
+      }
+    };
+
+    loadData(); // Call the async function within useEffect
+  }, []); // Empty dependency array ensures this only runs once on mount
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+        const url = tab?.url
+
+        if (!url) {
+          setError("Failed to retrieve the current tab's URL.")
+          setLoading(false)
+          return
+        }
+
+        const response = await fetch("http://localhost:5000/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        })
+
+        if (!response.ok) throw new Error("Failed to fetch data from the server.")
+        const data = await response.json()
+        if (data.status === "SUCCESS") {
+          setSiteData(data.output)
+        } else {
+          setError(data.msg || "Analysis failed")
+        }
+      } catch (err) {
+        console.error("Error:", err)
+        setError("Failed to analyze the URL.")
+      } finally {
+        setLoading(false)
+      }
     }
     loadData()
   }, [])
 
-  const calculateScore = (data: SiteData | null) => {
-    if (!data) return 0
-    let score = 0
-    if (data.sslStatus.valid) score += 20
-    if (parseFloat(data.generalInfo.domainAge) > 1) score += 15
-    if (data.securityDetails.hstsSupport === "Yes") score += 10
-    if (data.securityDetails.useOfUrlShortener === "No") score += 10
-    if (data.generalInfo.urlRedirects === "No") score += 10
-    if (data.generalInfo.tooLongUrl === "No" && data.generalInfo.tooDeepUrl === "No") score += 10
-    return Math.min(score, 100)
-  }
+  if (loading) return <div className="text-white p-4">Loading...</div>
+  if (error) return <div className="text-red-500 p-4">{error}</div>
+  if (!siteData) return <div className="text-white p-4">No data available</div>
+
+
+
+
+  const openSourceCodeTab = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/source-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urlSC })
+      });
+      const data = await response.json();
+      if (data.status === "SUCCESS") {
+        const newTab = window.open();
+        newTab!.document.write("<pre>" + data.formatted_html + "</pre>"); // Pre-formatted HTML
+      } else {
+        alert(data.msg || "Error fetching source code.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   const getTrustLabel = (score: number) => {
     if (score >= 80) return "Safe"
@@ -174,51 +188,56 @@ export default function Popup() {
     return "bg-red-500"
   }
 
-  if (!siteData) return <div className="text-white p-4">Loading...</div>
+  const reportPhishingSite = async () => {
+    try {
+      // Fetch the current page URL
+      const siteUrl = window.location.href;
+  
+      // Send the POST request with the site URL marked as phishing
+      const response = await axios.post('/update-db', {
+        site: siteUrl,
+        status: 'phishing'
+      });
+  
+      // Alert user based on response
+      if (response.status === 200) {
+        alert('Website reported successfully!');
+      } else {
+        alert('Failed to report the website.');
+      }
+    } catch (error) {
+      // Handle errors gracefully
+    
+    }
+  };
+  
 
-  const score = calculateScore(siteData) || 0; // Fallback to 0 if calculateScore returns undefined or null
- // `score` will now be a number
 
   return (
     <div className="w-[400px] text-white p-4 rounded-lg shadow-lg bg-gradient-to-br from-gray-900 to-gray-800">
       <div className="flex items-center justify-between mb-4 bg-black bg-opacity-30 p-3 rounded-lg shadow-md">
         <div className="flex items-center space-x-2">
           <Globe className="w-6 h-6" />
-          <h1 className="text-lg font-bold">{siteData.domain}</h1>
+          <h1 className="text-lg font-bold">{siteData.whois["Domain Name"]}</h1>
         </div>
-        <div className={`w-16 h-2 rounded-full ${getTrustColor(score)}`} />
+        <div className={`w-16 h-2 rounded-full ${siteData.trust_score}`} />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
         <TabsList className="grid w-full grid-cols-5 bg-black bg-opacity-30 rounded-lg shadow-md">
-          <TabsTrigger 
-            value="overview" 
-            className="text-xs data-[state=active]:bg-white data-[state=active]:bg-opacity-20 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="overview" className="text-xs data-[state=active]:bg-white data-[state=active]:bg-opacity-20 data-[state=active]:text-white">
             Overview
           </TabsTrigger>
-          <TabsTrigger 
-            value="general"
-            className="text-xs data-[state=active]:bg-white data-[state=active]:bg-opacity-20 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="general" className="text-xs data-[state=active]:bg-white data-[state=active]:bg-opacity-20 data-[state=active]:text-white">
             General
           </TabsTrigger>
-          <TabsTrigger 
-            value="security"
-            className="text-xs data-[state=active]:bg-white data-[state=active]:bg-opacity-20 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="security" className="text-xs data-[state=active]:bg-white data-[state=active]:bg-opacity-20 data-[state=active]:text-white">
             Security
           </TabsTrigger>
-          <TabsTrigger 
-            value="technical"
-            className="text-xs data-[state=active]:bg-white data-[state=active]:bg-opacity-20 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="technical" className="text-xs data-[state=active]:bg-white data-[state=active]:bg-opacity-20 data-[state=active]:text-white">
             Technical
           </TabsTrigger>
-          <TabsTrigger 
-            value="whois"
-            className="text-xs data-[state=active]:bg-white data-[state=active]:bg-opacity-20 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="whois" className="text-xs data-[state=active]:bg-white data-[state=active]:bg-opacity-20 data-[state=active]:text-white">
             WHOIS
           </TabsTrigger>
         </TabsList>
@@ -228,15 +247,15 @@ export default function Popup() {
             <p className="text-sm font-medium mb-2">Trust Score</p>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <span className={`text-3xl font-bold ${getTrustColor(score)} bg-opacity-20 px-2 py-1 rounded`}>
-                  {score}
+                <span className={`text-3xl font-bold ${getTrustColor(siteData.trust_score)} bg-opacity-20 px-2 py-1 rounded`}>
+                  {siteData.trust_score}
                 </span>
-                <span className="text-lg">{getTrustLabel(score)}</span>
+                <span className="text-lg">{getTrustLabel(siteData.trust_score)}</span>
               </div>
               <div className="w-12 h-12">
-                {score >= 80 ? (
+                {siteData.trust_score >= 80 ? (
                   <Shield className="w-full h-full text-green-500" />
-                ) : score >= 50 ? (
+                ) : siteData.trust_score >= 50 ? (
                   <AlertTriangle className="w-full h-full text-yellow-500" />
                 ) : (
                   <X className="w-full h-full text-red-500" />
@@ -248,22 +267,20 @@ export default function Popup() {
           <div className="p-3 rounded-lg bg-black bg-opacity-30 shadow-md">
             <InfoItem
               label="SSL Status"
-              value={siteData.sslStatus.valid ? "Valid" : "Invalid"}
-              isGood={siteData.sslStatus.valid}
+              value={siteData.ssl["Days to Expiry"] > 0 ? "Valid" : "Invalid"}
+              isGood={siteData.ssl["Days to Expiry"] > 0}
               tooltip="A valid SSL certificate ensures secure communication."
             />
-
             <InfoItem
               label="Domain Age"
-              value={siteData.generalInfo.domainAge}
-              isGood={parseFloat(siteData.generalInfo.domainAge) > 1}
+              value={siteData.age}
+              isGood={parseFloat(siteData.age) > 1}
               tooltip="Older domains are generally more trustworthy."
             />
-
             <InfoItem
               label="HSTS Support"
-              value={siteData.securityDetails.hstsSupport}
-              isGood={siteData.securityDetails.hstsSupport === "Yes"}
+              value={siteData.hsts_support === 1 ? "Yes" : "No"}
+              isGood={siteData.hsts_support === 1}
               tooltip="HSTS ensures only secure connections are used."
             />
           </div>
@@ -278,37 +295,38 @@ export default function Popup() {
             <CollapsibleContent className="mt-1 p-3 bg-black bg-opacity-30 rounded-lg shadow-md">
               <InfoItem
                 label="Domain Age"
-                value={siteData.generalInfo.domainAge}
-                isGood={parseFloat(siteData.generalInfo.domainAge) > 1}
+                value={siteData.age}
+                isGood={parseFloat(siteData.age) > 1}
                 tooltip="Older domains are generally more trustworthy."
               />
               <InfoItem
                 label="Global Rank"
-                value={siteData.generalInfo.globalRank}
-                isGood={parseInt(siteData.generalInfo.globalRank.replace(/,/g, '')) < 1000000}
+                value={siteData.rank.toLocaleString()}
+                isGood={siteData.rank < 1000000}
                 tooltip="A higher rank suggests better popularity and trustworthiness."
               />
               <InfoItem
                 label="URL Redirects"
-                value={siteData.generalInfo.urlRedirects}
-                isGood={siteData.generalInfo.urlRedirects === "No"}
+                value={siteData.url_redirects === 0 ? "No" : "Yes"}
+                isGood={siteData.url_redirects === 0}
                 tooltip="Redirects may hide the true destination, potentially indicating phishing attempts."
               />
               <InfoItem
                 label="Too Long URL"
-                value={siteData.generalInfo.tooLongUrl}
-                isGood={siteData.generalInfo.tooLongUrl === "No"}
+                value={siteData.too_long_url === 0 ? "No" : "Yes"}
+                isGood={siteData.too_long_url === 0}
                 tooltip="Long URLs can sometimes be used to disguise malicious links."
               />
               <InfoItem
                 label="Too Deep URL"
-                value={siteData.generalInfo.tooDeepUrl}
-                isGood={siteData.generalInfo.tooDeepUrl === "No"}
+                value={siteData.too_deep_url === 0 ? "No" : "Yes"}
+                isGood={siteData.too_deep_url === 0}
                 tooltip="Overly complex URLs can be a sign of phishing."
               />
             </CollapsibleContent>
           </Collapsible>
         </TabsContent>
+
 
         <TabsContent value="security" className="space-y-4">
           <Collapsible>
@@ -319,20 +337,20 @@ export default function Popup() {
             <CollapsibleContent className="mt-1 p-3 bg-black bg-opacity-30 rounded-lg shadow-md">
               <InfoItem
                 label="HTTP Status"
-                value={siteData.securityDetails.httpStatusCode}
-                isGood={siteData.securityDetails.httpStatusCode === 200}
+                value={siteData.response_status}
+                isGood={siteData.response_status === 200}
                 tooltip="A status of 200 indicates that the site is accessible."
               />
               <InfoItem
                 label="HSTS Support"
-                value={siteData.securityDetails.hstsSupport}
-                isGood={siteData.securityDetails.hstsSupport === "Yes"}
+                value={siteData.hsts_support === 1 ? "Yes" : "No"}
+                isGood={siteData.hsts_support === 1}
                 tooltip="HSTS ensures only secure connections are used."
               />
               <InfoItem
                 label="URL Shortener"
-                value={siteData.securityDetails.useOfUrlShortener}
-                isGood={siteData.securityDetails.useOfUrlShortener === "No"}
+                value={siteData.is_url_shortened === 1 ? "Yes" : "No"}
+                isGood={siteData.is_url_shortened === 0}
                 tooltip="Shortened URLs may obscure the true destination and can be risky."
               />
             </CollapsibleContent>
@@ -346,50 +364,50 @@ export default function Popup() {
             <CollapsibleContent className="mt-1 p-3 bg-black bg-opacity-30 rounded-lg shadow-md">
               <InfoItem
                 label="Valid"
-                value={siteData.sslStatus.valid ? "Yes" : "No"}
-                isGood={siteData.sslStatus.valid}
+                value={siteData.ssl["Days to Expiry"] > 0 ? "Yes" : "No"}
+                isGood={siteData.ssl["Days to Expiry"] > 0}
                 tooltip="A valid SSL certificate ensures secure communication."
               />
               <InfoItem
                 label="Issuer"
-                value={siteData.sslStatus.issuer}
+                value={siteData.ssl["Issued By"]}
                 isGood={true}
                 tooltip="The authority that issued the SSL certificate."
               />
               <InfoItem
                 label="Days to Expiry"
-                value={siteData.sslStatus.daysToExpiry}
-                isGood={siteData.sslStatus.daysToExpiry > 30}
+                value={siteData.ssl["Days to Expiry"]}
+                isGood={siteData.ssl["Days to Expiry"] > 30}
                 tooltip="Certificates close to expiry may be a risk if not renewed."
               />
               <InfoItem
                 label="Revoked"
-                value={siteData.sslStatus.isRevoked}
-                isGood={siteData.sslStatus.isRevoked === "No"}
+                value={siteData.ssl["Is Certificate Revoked"] ? "Yes" : "No"}
+                isGood={!siteData.ssl["Is Certificate Revoked"]}
                 tooltip="A revoked SSL certificate may indicate a security issue."
               />
             </CollapsibleContent>
           </Collapsible>
         </TabsContent>
 
+
         <TabsContent value="technical" className="space-y-4">
           <Collapsible>
             <CollapsibleTrigger className="flex justify-between w-full bg-black bg-opacity-30 p-3 rounded-lg shadow-md">
               <span className="font-medium text-sm">Technical Details</span>
               <ChevronDown className="w-4 h-4" />
-            
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-1 p-3 bg-black bg-opacity-30 rounded-lg shadow-md">
               <InfoItem
                 label="IP of Domain"
-                value={siteData.technicalDetails.ipOfDomain}
+                value={siteData.ip}
                 isGood={true}
                 tooltip="The IP address associated with the domain, used for network routing."
               />
               <InfoItem
                 label="IP in URL"
-                value={siteData.technicalDetails.ipAddressPresentInUrl}
-                isGood={siteData.technicalDetails.ipAddressPresentInUrl === "No"}
+                value={siteData.ip_present === 0 ? "No" : "Yes"}
+                isGood={siteData.ip_present === 0}
                 tooltip="Using an IP address instead of a domain can be a phishing tactic."
               />
             </CollapsibleContent>
@@ -405,49 +423,59 @@ export default function Popup() {
             <CollapsibleContent className="mt-1 p-3 bg-black bg-opacity-30 rounded-lg shadow-md">
               <InfoItem
                 label="Registrar"
-                value={siteData.whoisInfo.registrar}
+                value={siteData.whois.Registrar}
                 isGood={true}
                 tooltip="The company that registered the domain name."
               />
               <InfoItem
                 label="Creation Date"
-                value={new Date(siteData.whoisInfo.creationDate).toLocaleDateString()}
+                value={new Date(siteData.whois["Creation Date"]).toLocaleDateString()}
                 isGood={true}
                 tooltip="When the domain was first registered."
               />
               <InfoItem
                 label="Expiration Date"
-                value={new Date(siteData.whoisInfo.expirationDate).toLocaleDateString()}
-                isGood={new Date(siteData.whoisInfo.expirationDate) > new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
+                value={new Date(siteData.whois["Expiration Date"]).toLocaleDateString()}
+                isGood={new Date(siteData.whois["Expiration Date"]) > new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
                 tooltip="When the domain registration will expire. Should be well in the future."
               />
               <p className="text-xs mt-2 font-medium">Name Servers:</p>
               <ul className="list-disc list-inside pl-2">
-                {siteData.whoisInfo.nameServers.map((server, index) => (
-                  <li key={index} className="text-xs py-1">{server}</li>
+                {siteData.whois["Name Servers"].split(',').map((server, index) => (
+                  <li key={index} className="text-xs py-1">{server.trim()}</li>
                 ))}
               </ul>
             </CollapsibleContent>
           </Collapsible>
         </TabsContent>
+
       </Tabs>
 
       <div className="flex justify-between items-center mt-4 bg-black bg-opacity-30 p-3 rounded-lg shadow-md">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="text-xs text-white hover:text-white hover:bg-white hover:bg-opacity-10"
-          onClick={() => setActiveTab("overview")}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-white hover:text-white hover:bg-white hover:bg-opacity-10 mt-2"
+          onClick={openSourceCodeTab}
         >
           <Settings className="w-4 h-4 mr-1" />
-          Settings
+          Source Code
         </Button>
-        <Button 
-          variant="link" 
-          size="sm" 
-          className="text-xs text-white hover:text-gray-300"
+        <Button
+          variant="link"
+          size="sm"
+          className="text-xs text-white hover:text-gray-300 mt-2"
+          onClick={openSourceCodeTab}
         >
-          View Full Report
+          View Report
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-white bg-red-500 hover:bg-red-600 mt-2"
+          onClick={reportPhishingSite}  // Trigger the report function directly
+        >
+          Report This Website
         </Button>
       </div>
     </div>

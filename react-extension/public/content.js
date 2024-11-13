@@ -23,6 +23,13 @@
             100% { transform: scale(1); opacity: 0.2; }
         }
         
+        /* Boom effect: Expanding circle animation */
+        @keyframes boomEffect {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(50); opacity: 0.2; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        
         #safesurf-bar {
             position: fixed;
             top: 0;
@@ -76,6 +83,19 @@
             animation: zoomCircles 1.5s infinite ease-in-out;
         }
 
+        /* Boom effect circle */
+        #boom-circle {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            animation: boomEffect 1s ease-out forwards;
+        }
+
         #safesurf-result-circle {
             width: 20px;
             height: 20px;
@@ -114,10 +134,31 @@
         document.body.appendChild(bar);
         setTimeout(() => bar.style.animation = "fadeIn 0.5s ease-out", 0);
 
+        // Add the boom effect if score is successfully retrieved
+        if (score !== null) {
+            triggerBoomEffect(score);
+        }
+
         setTimeout(() => {
             bar.style.animation = "fadeIn 0.5s ease-out reverse";
             setTimeout(() => bar.remove(), 500);
         }, 7000);
+    }
+
+    // Function to trigger the boom effect with color based on score
+    function triggerBoomEffect(score) {
+        const boomCircle = document.createElement("div");
+        boomCircle.id = "boom-circle";
+        boomCircle.style.backgroundColor = getBoomColor(score); // Set color based on score
+        document.body.appendChild(boomCircle);
+        setTimeout(() => boomCircle.remove(), 1000); // Remove after the animation ends
+    }
+
+    // Function to determine the color for the boom effect
+    function getBoomColor(score) {
+        if (score >= 75) return "rgba(76, 175, 80, 0.3)";     // Green for safe
+        else if (score >= 50) return "rgba(255, 193, 7, 0.3)";  // Yellow for caution
+        else return "rgba(244, 67, 54, 0.3)";                   // Red for danger
     }
 
     // Function to determine the score color class
