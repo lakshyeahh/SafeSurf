@@ -1,5 +1,3 @@
-[Go back to SafeSurf Documentation](README.md#learn-and-contribute-to-the-project)
-
 # Code Documentaion
 ## Documentation for app.py 
 
@@ -176,6 +174,3 @@ This function is responsible for updating the two files with the latest data. It
 The script was last executed with the latest `top-1m.csv` file on: 2024-03-04
 
 This script provides a convenient way to update the files containing the list of top 1 million websites, facilitating the assessment of URLs based on their domain ranks.
-
-
-[Go back to SafeSurf Documentation](README.md#learn-and-contribute-to-the-project)

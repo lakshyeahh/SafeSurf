@@ -1,7 +1,4 @@
 
-<img src="static/safesurf-normal.png"  width="350" height="88">
-
-
 # SafeSurf
 
 A phishing domain detection tool that also allows you to safely view the website without actually visiting it. Built using Python. With SafeSurf, you can quickly identify suspicious websites and protect yourself from phishing attacks.
@@ -18,9 +15,9 @@ These are the features provided by SafeSurf to its users.
 
 ## Demo
 
-https://safesurf.vercel.app
 
-<img src="static/safesurf-screenshot.png"  width="350" height="175">
+
+
 <br>
 
 ## Local Setup
@@ -128,8 +125,3 @@ git push origin name-of-your-branch
    </details>
 
 
-## Feedback
-
-If you have any feedback or suggestions, please reach out at https://abhishekkp.com/contact/ or start a discussion on [SafeSurf Discussions](https://github.com/abhizaik/SafeSurf/discussions).
-
-Any input is highly appreciated.
