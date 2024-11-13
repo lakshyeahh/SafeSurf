@@ -28,6 +28,7 @@ def analyze_url():
         try:
             # Analyze the URL
             result = controller.main(url)
+            
             return jsonify({'status': 'SUCCESS', 'output': result})
         except Exception as e:
             return jsonify({'status': 'ERROR', 'msg': str(e)}), 500
